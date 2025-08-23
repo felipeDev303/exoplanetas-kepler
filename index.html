@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EXO - Core System Demo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+        color: #00ff88;
+        font-family: "Courier New", monospace;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        min-height: calc(100vh - 40px);
+      }
+
+      .panel {
+        background: rgba(0, 20, 40, 0.8);
+        border: 1px solid #00ff88;
+        border-radius: 8px;
+        padding: 20px;
+        backdrop-filter: blur(10px);
+      }
+
+      .panel h2 {
+        color: #00ff88;
+        margin-bottom: 20px;
+        font-size: 18px;
+        border-bottom: 1px solid #00ff88;
+        padding-bottom: 10px;
+      }
+
+      .panel h3 {
+        color: #88ff00;
+        margin: 15px 0 10px 0;
+        font-size: 14px;
+      }
+
+      .module-list {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .module-item {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid #00ff88;
+        border-radius: 4px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .module-item.active {
+        border-color: #88ff00;
+        background: rgba(136, 255, 0, 0.1);
+      }
+
+      .module-name {
+        font-weight: bold;
+      }
+
+      .module-status {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: #ff4444;
+        color: white;
+      }
+
+      .module-status.active {
+        background: #44ff44;
+        color: black;
+      }
+
+      .module-controls button {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid #00ff88;
+        color: #00ff88;
+        padding: 4px 8px;
+        font-size: 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        margin-left: 5px;
+      }
+
+      .module-controls button:hover {
+        background: rgba(0, 255, 136, 0.2);
+      }
+
+      .event-log {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 10px;
+        height: 200px;
+        overflow-y: auto;
+        font-size: 10px;
+        font-family: monospace;
+      }
+
+      .event-entry {
+        margin-bottom: 5px;
+        padding: 3px 0;
+        border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+      }
+
+      .event-timestamp {
+        color: #666;
+        margin-right: 10px;
+      }
+
+      .event-type {
+        color: #00ff88;
+        margin-right: 10px;
+        font-weight: bold;
+      }
+
+      .event-data {
+        color: #ccc;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .control-group {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #444;
+      }
+
+      .control-group label {
+        display: block;
+        color: #88ff00;
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+
+      .control-group select,
+      .control-group input,
+      .control-group button {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid #00ff88;
+        color: #00ff88;
+        padding: 8px;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 11px;
+      }
+
+      .control-group button {
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .control-group button:hover {
+        background: rgba(0, 255, 136, 0.2);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .stat-item {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #444;
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 18px;
+        color: #00ff88;
+        font-weight: bold;
+      }
+
+      .stat-label {
+        font-size: 10px;
+        color: #888;
+        margin-top: 5px;
+      }
+
+      .json-config {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 10px;
+        height: 150px;
+        overflow-y: auto;
+        font-size: 10px;
+        font-family: monospace;
+        color: #ccc;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Module Management Panel -->
+      <div class="panel">
+        <h2>🎛️ Module Manager</h2>
+
+        <div class="stats">
+          <div class="stat-item">
+            <div class="stat-value" id="totalModules">0</div>
+            <div class="stat-label">Total Modules</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="activeModules">0</div>
+            <div class="stat-label">Active</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="totalEvents">0</div>
+            <div class="stat-label">Events Fired</div>
+          </div>
+        </div>
+
+        <h3>📦 Registered Modules</h3>
+        <div id="moduleList" class="module-list"></div>
+
+        <h3>🎮 Controls</h3>
+        <div class="controls">
+          <div class="control-group">
+            <label>Load Module</label>
+            <select id="moduleSelect">
+              <option value="">Select module...</option>
+              <option value="hand_gesture_input">Hand Gesture Input</option>
+              <option value="kepler_api">Kepler API</option>
+              <option value="threejs_renderer">Three.js Renderer</option>
+              <option value="midi_input">MIDI Input</option>
+              <option value="strudel_bridge">Strudel Bridge</option>
+              <option value="dub_audio_engine">Dub Audio Engine</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <button onclick="coreSystem.loadSelectedModule()">
+              Load Module
+            </button>
+          </div>
+          <div class="control-group">
+            <button onclick="coreSystem.activateAllModules()">
+              Activate All
+            </button>
+          </div>
+          <div class="control-group">
+            <button onclick="coreSystem.deactivateAllModules()">
+              Deactivate All
+            </button>
+          </div>
+        </div>
+
+        <h3>⚙️ Pattern Configuration</h3>
+        <div class="json-config" id="patternConfig"></div>
+      </div>
+
+      <!-- Event System Panel -->
+      <div class="panel">
+        <h2>📡 Event Bus Monitor</h2>
+
+        <h3>🔄 Real-time Events</h3>
+        <div id="eventLog" class="event-log"></div>
+
+        <h3>🧪 Event Testing</h3>
+        <div class="controls">
+          <div class="control-group">
+            <label>Event Type</label>
+            <input
+              type="text"
+              id="testEventType"
+              placeholder="e.g., gesture:detected"
+              value="test:event"
+            />
+          </div>
+          <div class="control-group">
+            <label>Event Data (JSON)</label>
+            <input
+              type="text"
+              id="testEventData"
+              placeholder='{"value": 0.5}'
+              value='{"test": true}'
+            />
+          </div>
+          <div class="control-group" style="grid-column: 1/-1">
+            <button onclick="coreSystem.fireTestEvent()">
+              🚀 Fire Test Event
+            </button>
+          </div>
+        </div>
+
+        <h3>📊 Event Statistics</h3>
+        <div id="eventStats" class="event-log" style="height: 120px"></div>
+
+        <h3>🎯 Active Subscriptions</h3>
+        <div
+          id="subscriptionList"
+          class="event-log"
+          style="height: 100px"
+        ></div>
+      </div>
+    </div>
+
+    <script type="module">
+      // ====================================
+      // 🚀 CORE SYSTEM: EventBus
+      // ====================================
+      class EventBus {
+        constructor() {
+          this.events = new Map();
+          this.eventHistory = [];
+          this.maxHistory = 1000;
+          this.statistics = new Map();
+          this.subscribers = new Map();
+          this.performanceMetrics = {
+            eventsPerSecond: 0,
+            averageProcessingTime: 0,
+            peakProcessingTime: 0,
+          };
+          this.setupPerformanceMonitoring();
+        }
+        setupPerformanceMonitoring() {
+          setInterval(() => {
+            const now = performance.now();
+            const recentEvents = this.eventHistory.filter(
+              (event) => now - event.timestamp < 1000
+            );
+            this.performanceMetrics.eventsPerSecond = recentEvents.length;
+          }, 1000);
+        }
+        subscribe(eventType, callback, subscriberId = null) {
+          if (!this.events.has(eventType)) this.events.set(eventType, []);
+          const id = `sub_${Date.now()}_${Math.random()}`;
+          const subscription = {
+            callback,
+            subscriberId: id,
+            timestamp: performance.now(),
+          };
+          this.events.get(eventType).push(subscription);
+          if (subscriberId) {
+            if (!this.subscribers.has(subscriberId))
+              this.subscribers.set(subscriberId, []);
+            this.subscribers
+              .get(subscriberId)
+              .push({ eventType, subscription });
+          }
+          console.log(
+            `📡 EventBus: Subscribed to '${eventType}'`,
+            subscription
+          );
+          return id;
+        }
+        emit(eventType, data = null) {
+          const startTime = performance.now();
+          const eventData = {
+            type: eventType,
+            data,
+            timestamp: startTime,
+            id: `evt_${Date.now()}_${Math.random()}`,
+          };
+          this.eventHistory.push(eventData);
+          if (this.eventHistory.length > this.maxHistory)
+            this.eventHistory.shift();
+          const currentCount = this.statistics.get(eventType) || 0;
+          this.statistics.set(eventType, currentCount + 1);
+          const subscribers = this.events.get(eventType) || [];
+          let callbacksExecuted = 0;
+          subscribers.forEach((subscription) => {
+            try {
+              subscription.callback(eventData);
+              callbacksExecuted++;
+            } catch (error) {
+              console.error(
+                `❌ EventBus: Error in callback for '${eventType}':`,
+                error
+              );
+            }
+          });
+          const processingTime = performance.now() - startTime;
+          this.performanceMetrics.averageProcessingTime =
+            (this.performanceMetrics.averageProcessingTime + processingTime) /
+            2;
+          if (processingTime > this.performanceMetrics.peakProcessingTime)
+            this.performanceMetrics.peakProcessingTime = processingTime;
+          console.log(
+            `🚀 EventBus: Emitted '${eventType}' to ${callbacksExecuted} subscribers`,
+            { data, processingTime: processingTime.toFixed(2) + "ms" }
+          );
+          return eventData.id;
+        }
+        unsubscribe(eventType, subscriberId) {
+          const subscribers = this.events.get(eventType);
+          if (subscribers) {
+            const index = subscribers.findIndex(
+              (sub) => sub.subscriberId === subscriberId
+            );
+            if (index !== -1) {
+              subscribers.splice(index, 1);
+              console.log(`🔌 EventBus: Unsubscribed from '${eventType}'`);
+              return true;
+            }
+          }
+          return false;
+        }
+        unsubscribeAll(subscriberId) {
+          let unsubscribed = 0;
+          this.events.forEach((subscribers, eventType) => {
+            const filtered = subscribers.filter(
+              (sub) => sub.subscriberId !== subscriberId
+            );
+            if (filtered.length !== subscribers.length) {
+              this.events.set(eventType, filtered);
+              unsubscribed++;
+            }
+          });
+          this.subscribers.delete(subscriberId);
+          console.log(
+            `🔌 EventBus: Unsubscribed '${subscriberId}' from ${unsubscribed} events`
+          );
+          return unsubscribed;
+        }
+        getStatistics() {
+          return {
+            totalEvents: this.eventHistory.length,
+            eventTypes: Array.from(this.statistics.keys()),
+            eventCounts: Object.fromEntries(this.statistics),
+            performance: this.performanceMetrics,
+            activeSubscriptions: Array.from(this.events.entries()).map(
+              ([type, subs]) => ({
+                eventType: type,
+                subscriberCount: subs.length,
+              })
+            ),
+          };
+        }
+        getRecentEvents(count = 10) {
+          return this.eventHistory.slice(-count).reverse();
+        }
+        clear() {
+          this.events.clear();
+          this.eventHistory = [];
+          this.statistics.clear();
+          this.subscribers.clear();
+          console.log("🧹 EventBus: Cleared all events and subscriptions");
+        }
+      }
+
+      // ====================================
+      // 🎛️ CORE SYSTEM: ModuleBase
+      // ====================================
+      class ModuleBase {
+        constructor(name, config = {}) {
+          this.name = name;
+          this.config = { ...this.getDefaultConfig(), ...config };
+          this.isActive = false;
+          this.isLoaded = false;
+          this.eventBus = null;
+          this.subscriptions = [];
+          this.moduleData = {};
+          this.metrics = {
+            initTime: 0,
+            activationTime: 0,
+            processedEvents: 0,
+            errors: 0,
+          };
+          console.log(`🔧 ModuleBase: Created module '${name}'`, this.config);
+        }
+        getDefaultConfig() {
+          return { autoActivate: true, debugMode: false, priority: 1 };
+        }
+        async init() {
+          const startTime = performance.now();
+          try {
+            await this.onInit();
+            this.isLoaded = true;
+            this.metrics.initTime = performance.now() - startTime;
+            console.log(
+              `✅ Module '${
+                this.name
+              }' initialized in ${this.metrics.initTime.toFixed(2)}ms`
+            );
+            if (this.eventBus)
+              this.eventBus.emit("module:initialized", {
+                module: this.name,
+                initTime: this.metrics.initTime,
+              });
+            return true;
+          } catch (error) {
+            this.metrics.errors++;
+            console.error(
+              `❌ Module '${this.name}' initialization failed:`,
+              error
+            );
+            if (this.eventBus)
+              this.eventBus.emit("module:error", {
+                module: this.name,
+                error: error.message,
+                phase: "initialization",
+              });
+            return false;
+          }
+        }
+        async onInit() {
+          console.log(`🔨 Module '${this.name}': Default initialization`);
+        }
+        activate() {
+          if (!this.isLoaded) {
+            console.warn(
+              `⚠️ Module '${this.name}': Cannot activate - not initialized`
+            );
+            return false;
+          }
+          const startTime = performance.now();
+          try {
+            this.isActive = true;
+            this.onActivate();
+            this.metrics.activationTime = performance.now() - startTime;
+            console.log(`🟢 Module '${this.name}' activated`);
+            if (this.eventBus)
+              this.eventBus.emit("module:activated", {
+                module: this.name,
+                activationTime: this.metrics.activationTime,
+              });
+            return true;
+          } catch (error) {
+            this.metrics.errors++;
+            this.isActive = false;
+            console.error(`❌ Module '${this.name}' activation failed:`, error);
+            return false;
+          }
+        }
+        onActivate() {}
+        deactivate() {
+          try {
+            this.isActive = false;
+            this.onDeactivate();
+            console.log(`🔴 Module '${this.name}' deactivated`);
+            if (this.eventBus)
+              this.eventBus.emit("module:deactivated", { module: this.name });
+            return true;
+          } catch (error) {
+            this.metrics.errors++;
+            console.error(
+              `❌ Module '${this.name}' deactivation failed:`,
+              error
+            );
+            return false;
+          }
+        }
+        onDeactivate() {}
+        destroy() {
+          try {
+            this.deactivate();
+            this.unsubscribeAll();
+            this.onDestroy();
+            console.log(`💀 Module '${this.name}' destroyed`);
+            if (this.eventBus)
+              this.eventBus.emit("module:destroyed", { module: this.name });
+          } catch (error) {
+            console.error(
+              `❌ Module '${this.name}' destruction failed:`,
+              error
+            );
+          }
+        }
+        onDestroy() {}
+        setEventBus(eventBus) {
+          this.eventBus = eventBus;
+        }
+        subscribe(eventType, callback) {
+          if (!this.eventBus) {
+            console.warn(
+              `⚠️ Module '${this.name}': No EventBus available for subscription`
+            );
+            return null;
+          }
+          const subscriptionId = this.eventBus.subscribe(
+            eventType,
+            (eventData) => {
+              this.metrics.processedEvents++;
+              callback(eventData);
+            },
+            this.name
+          );
+          this.subscriptions.push({ eventType, subscriptionId });
+          return subscriptionId;
+        }
+        emit(eventType, data) {
+          if (!this.eventBus) {
+            console.warn(
+              `⚠️ Module '${this.name}': No EventBus available for emission`
+            );
+            return null;
+          }
+          return this.eventBus.emit(eventType, data);
+        }
+        unsubscribeAll() {
+          if (this.eventBus) {
+            this.subscriptions.forEach(({ eventType, subscriptionId }) => {
+              this.eventBus.unsubscribe(eventType, subscriptionId);
+            });
+          }
+          this.subscriptions = [];
+        }
+        receiveData(data) {
+          console.log(`📨 Module '${this.name}' received data:`, data);
+        }
+        sendData(data) {
+          this.emit(`${this.name}:data`, data);
+        }
+        getMetrics() {
+          return {
+            ...this.metrics,
+            isActive: this.isActive,
+            isLoaded: this.isLoaded,
+            subscriptionCount: this.subscriptions.length,
+          };
+        }
+      }
+
+      // ====================================
+      // 🎛️ CORE SYSTEM: ModuleManager
+      // ====================================
+      class ModuleManager {
+        constructor(eventBus) {
+          this.eventBus = eventBus;
+          this.modules = new Map();
+          this.moduleRegistry = new Map();
+          this.loadOrder = [];
+          this.config = { maxConcurrentLoads: 5, loadTimeout: 30000 };
+          this.setupEventListeners();
+          this.registerBuiltInModules();
+          console.log("🎛️ ModuleManager: Initialized");
+        }
+        setupEventListeners() {
+          this.eventBus.subscribe(
+            "module:error",
+            (event) => {
+              console.error(
+                `🚨 ModuleManager: Module error in '${event.data.module}':`,
+                event.data.error
+              );
+            },
+            "module_manager"
+          );
+        }
+        registerBuiltInModules() {
+          this.registerModuleType("hand_gesture_input", MockHandGestureModule);
+          this.registerModuleType("kepler_api", MockKeplerAPIModule);
+          this.registerModuleType(
+            "threejs_renderer",
+            MockThreeJSRendererModule
+          );
+          this.registerModuleType("midi_input", MockMIDIInputModule);
+          this.registerModuleType("strudel_bridge", MockStrudelBridgeModule);
+          this.registerModuleType("dub_audio_engine", MockDubAudioEngineModule);
+        }
+        registerModuleType(type, moduleClass) {
+          this.moduleRegistry.set(type, moduleClass);
+          console.log(`📋 ModuleManager: Registered module type '${type}'`);
+        }
+        async loadModule(type, name = null, config = {}) {
+          name = name || `${type}_${Date.now()}`;
+          if (this.modules.has(name)) {
+            console.warn(`⚠️ ModuleManager: Module '${name}' already loaded`);
+            return this.modules.get(name);
+          }
+          const ModuleClass = this.moduleRegistry.get(type);
+          if (!ModuleClass) throw new Error(`Unknown module type: ${type}`);
+          console.log(
+            `📦 ModuleManager: Loading module '${name}' of type '${type}'`
+          );
+          try {
+            const module = new ModuleClass(name, config);
+            module.setEventBus(this.eventBus);
+            const initialized = await module.init();
+            if (!initialized) throw new Error(`Module initialization failed`);
+            this.modules.set(name, module);
+            this.loadOrder.push(name);
+            if (config.autoActivate !== false) module.activate();
+            this.eventBus.emit("module:loaded", { name, type, config });
+            console.log(
+              `✅ ModuleManager: Module '${name}' loaded successfully`
+            );
+            return module;
+          } catch (error) {
+            console.error(
+              `❌ ModuleManager: Failed to load module '${name}':`,
+              error
+            );
+            this.eventBus.emit("module:load_failed", {
+              name,
+              type,
+              error: error.message,
+            });
+            throw error;
+          }
+        }
+        unloadModule(name) {
+          const module = this.modules.get(name);
+          if (!module) {
+            console.warn(`⚠️ ModuleManager: Module '${name}' not found`);
+            return false;
+          }
+          try {
+            module.destroy();
+            this.modules.delete(name);
+            const orderIndex = this.loadOrder.indexOf(name);
+            if (orderIndex !== -1) this.loadOrder.splice(orderIndex, 1);
+            this.eventBus.emit("module:unloaded", { name });
+            console.log(`🗑️ ModuleManager: Module '${name}' unloaded`);
+            return true;
+          } catch (error) {
+            console.error(
+              `❌ ModuleManager: Failed to unload module '${name}':`,
+              error
+            );
+            return false;
+          }
+        }
+        getModule(name) {
+          return this.modules.get(name);
+        }
+        getAllModules() {
+          return Array.from(this.modules.values());
+        }
+        getActiveModules() {
+          return Array.from(this.modules.values()).filter((m) => m.isActive);
+        }
+        activateAllModules() {
+          let activated = 0;
+          this.modules.forEach((module) => {
+            if (module.activate()) activated++;
+          });
+          console.log(`🟢 ModuleManager: Activated ${activated} modules`);
+          return activated;
+        }
+        deactivateAllModules() {
+          let deactivated = 0;
+          this.modules.forEach((module) => {
+            if (module.isActive && module.deactivate()) deactivated++;
+          });
+          console.log(`🔴 ModuleManager: Deactivated ${deactivated} modules`);
+          return deactivated;
+        }
+        getStatistics() {
+          const modules = Array.from(this.modules.values());
+          return {
+            totalModules: modules.length,
+            activeModules: modules.filter((m) => m.isActive).length,
+            loadedModules: modules.filter((m) => m.isLoaded).length,
+            moduleTypes: Array.from(this.moduleRegistry.keys()),
+            loadOrder: [...this.loadOrder],
+            metrics: modules.map((m) => ({ name: m.name, ...m.getMetrics() })),
+          };
+        }
+      }
+
+      // ====================================
+      // 🧪 MOCK MODULES FOR DEMO
+      // ====================================
+      class MockHandGestureModule extends ModuleBase {
+        async onInit() {
+          this.gestureData = { hands: 0, confidence: 0 };
+          setInterval(() => {
+            if (this.isActive) {
+              this.gestureData.hands =
+                Math.random() > 0.7 ? 2 : Math.random() > 0.5 ? 1 : 0;
+              this.gestureData.confidence = Math.random();
+              this.emit("gesture:detected", this.gestureData);
+            }
+          }, 300);
+        }
+        onActivate() {
+          console.log("👋 Hand Gesture Input: Starting camera...");
+        }
+        onDeactivate() {
+          console.log("👋 Hand Gesture Input: Stopping camera...");
+        }
+      }
+      class MockKeplerAPIModule extends ModuleBase {
+        async onInit() {
+          this.exoplanets = [];
+          this.subscribe("system:request_data", () => {
+            this.fetchExoplanets();
+          });
+        }
+        onActivate() {
+          this.fetchExoplanets();
+        }
+        fetchExoplanets() {
+          setTimeout(() => {
+            this.exoplanets = Array.from({ length: 50 }, (_, i) => ({
+              name: `Kepler-${400 + i}b`,
+              radius: +(Math.random() * 5 + 0.5).toFixed(2),
+              period: +(Math.random() * 400 + 10).toFixed(2),
+            }));
+            this.emit("data:exoplanets_loaded", {
+              count: this.exoplanets.length,
+              data: this.exoplanets,
+            });
+          }, 800);
+        }
+      }
+      class MockThreeJSRendererModule extends ModuleBase {
+        async onInit() {
+          this.scene = { objects: 0 };
+          this.subscribe("data:exoplanets_loaded", (evt) => {
+            console.log("Renderer received exoplanet data", evt);
+          });
+        }
+        onActivate() {
+          this._tick = setInterval(() => {
+            if (this.isActive)
+              this.emit("render:frame", { t: performance.now() });
+          }, 1000 / 30);
+        }
+        onDeactivate() {
+          clearInterval(this._tick);
+        }
+      }
+      class MockMIDIInputModule extends ModuleBase {
+        async onInit() {
+          this.counter = 0;
+          this._t = setInterval(() => {
+            if (this.isActive)
+              this.emit("midi:note", {
+                note: 60 + (this.counter++ % 12),
+                velocity: Math.random(),
+              });
+          }, 500);
+        }
+        onDeactivate() {
+          clearInterval(this._t);
+        }
+      }
+      class MockStrudelBridgeModule extends ModuleBase {
+        async onInit() {}
+        onActivate() {
+          this.emit("strudel:connected", { ok: true });
+        }
+      }
+      class MockDubAudioEngineModule extends ModuleBase {
+        async onInit() {}
+        onActivate() {
+          this.emit("audio:ready", { engine: "webaudio" });
+        }
+      }
+
+      // ====================================
+      // 🌐 CORE SYSTEM INSTANCE + UI BINDINGS
+      // ====================================
+      const eventBus = new EventBus();
+      const moduleManager = new ModuleManager(eventBus);
+
+      const coreSystem = {
+        eventBus,
+        moduleManager,
+        async loadSelectedModule() {
+          const sel = document.getElementById("moduleSelect").value;
+          if (!sel) return alert("Seleccione un módulo");
+          try {
+            await this.moduleManager.loadModule(sel);
+            renderModuleList();
+            renderStats();
+          } catch (e) {
+            console.error(e);
+            alert("Load failed: " + e.message);
+          }
+        },
+        activateAllModules() {
+          this.moduleManager.activateAllModules();
+          renderModuleList();
+          renderStats();
+        },
+        deactivateAllModules() {
+          this.moduleManager.deactivateAllModules();
+          renderModuleList();
+          renderStats();
+        },
+        fireTestEvent() {
+          const type = document.getElementById("testEventType").value;
+          let data = {};
+          try {
+            data = JSON.parse(document.getElementById("testEventData").value);
+          } catch (e) {
+            data = { raw: document.getElementById("testEventData").value };
+          }
+          this.eventBus.emit(type, data);
+          renderEventLog();
+          renderStats();
+        },
+      };
+
+      window.coreSystem = coreSystem;
+
+      // UI helpers
+      function renderModuleList() {
+        const list = document.getElementById("moduleList");
+        list.innerHTML = "";
+        const modules = moduleManager.getAllModules();
+        document.getElementById("totalModules").textContent = modules.length;
+        document.getElementById("activeModules").textContent = modules.filter(
+          (m) => m.isActive
+        ).length;
+        modules.forEach((m) => {
+          const div = document.createElement("div");
+          div.className = "module-item " + (m.isActive ? "active" : "");
+          div.innerHTML = `<div><div class="module-name">${
+            m.name
+          }</div><div class="module-type">${
+            m.constructor.name
+          }</div></div><div class="module-status ${
+            m.isActive ? "active" : ""
+          }">${m.isActive ? "active" : "inactive"}</div>`;
+          const controls = document.createElement("div");
+          controls.className = "module-controls";
+          const btnAct = document.createElement("button");
+          btnAct.textContent = m.isActive ? "Deactivate" : "Activate";
+          btnAct.onclick = () => {
+            if (m.isActive) m.deactivate();
+            else m.activate();
+            renderModuleList();
+            renderStats();
+          };
+          const btnUnload = document.createElement("button");
+          btnUnload.textContent = "Unload";
+          btnUnload.onclick = () => {
+            moduleManager.unloadModule(m.name);
+            renderModuleList();
+            renderStats();
+          };
+          controls.appendChild(btnAct);
+          controls.appendChild(btnUnload);
+          div.appendChild(controls);
+          list.appendChild(div);
+        });
+      }
+
+      function renderEventLog() {
+        const log = document.getElementById("eventLog");
+        const events = eventBus.getRecentEvents(80);
+        document.getElementById("totalEvents").textContent =
+          eventBus.eventHistory.length;
+        log.innerHTML = "";
+        events.forEach((e) => {
+          const d = document.createElement("div");
+          d.className = "event-entry";
+          d.innerHTML = `<span class="event-timestamp">${new Date(
+            e.timestamp
+          ).toLocaleTimeString()}</span><span class="event-type">${
+            e.type
+          }</span><span class="event-data">${JSON.stringify(e.data)}</span>`;
+          log.appendChild(d);
+        });
+      }
+
+      function renderSubscriptionList() {
+        const el = document.getElementById("subscriptionList");
+        el.innerHTML = "";
+        eventBus.events.forEach((subs, type) => {
+          const item = document.createElement("div");
+          item.className = "event-entry";
+          item.textContent = `${type} → ${subs.length} subscribers`;
+          el.appendChild(item);
+        });
+      }
+
+      function renderStats() {
+        const s = eventBus.getStatistics();
+        const es = document.getElementById("eventStats");
+        es.innerHTML = `<div>Total events: ${
+          s.totalEvents
+        }</div><div>Events/sec: ${
+          s.performance.eventsPerSecond
+        }</div><div>Peak proc ms: ${s.performance.peakProcessingTime.toFixed(
+          2
+        )}</div>`;
+        document.getElementById("patternConfig").textContent = JSON.stringify(
+          {
+            pattern_id: "exo_demo",
+            modules: Array.from(moduleManager.moduleRegistry.keys()),
+          },
+          null,
+          2
+        );
+      }
+
+      // Periodic UI refresh
+      setInterval(() => {
+        renderEventLog();
+        renderSubscriptionList();
+        renderStats();
+        renderModuleList();
+      }, 500);
+
+      // Initial render
+      renderModuleList();
+      renderEventLog();
+      renderSubscriptionList();
+      renderStats();
+
+      // Expose helpers for debugging
+      window._eventBus = eventBus;
+      window._moduleManager = moduleManager;
+    </script>
+  </body>
+</html>
+// Draw hand landmarks for (let i = 0; i < results.multiHandLandmarks.length;
+i++) { const landmarks = results.multiHandLandmarks[i]; // Draw landmarks
+drawLandmarks(this.canvasCtx, landmarks, { color: i === 0 ? '#00FF88' :
+'#FF0088', lineWidth: 2 }); // Draw connections drawConnectors(this.canvasCtx,
+landmarks, HAND_CONNECTIONS, { color: i === 0 ? '#00FF88' : '#FF0088',
+lineWidth: 1 }); } } this.canvasCtx.restore();
+this.updateVisualizationFromGestures(); } processGestures(multiHandLandmarks,
+multiHandedness) { this.gestureData.handsDetected = multiHandLandmarks.length >
+0; let leftHand = null; let rightHand = null; // Identify left and right hands
+for (let i = 0; i < multiHandLandmarks.length; i++) { const handedness =
+multiHandedness[i].label; if (handedness === 'Left') { leftHand =
+multiHandLandmarks[i]; } else { rightHand = multiHandLandmarks[i]; } } //
+Process left hand (filter control) if (leftHand) { const wrist = leftHand[0];
+const middleTip = leftHand[12]; this.gestureData.leftHandY = 1 - wrist.y; //
+Invert Y for intuitive control } // Process right hand (planet selection &
+scale) if (rightHand) { const wrist = rightHand[0]; this.gestureData.rightHandY
+= 1 - wrist.y; // Calculate wrist rotation const middleMCP = rightHand[9]; const
+angle = Math.atan2(middleMCP.y - wrist.y, middleMCP.x - wrist.x);
+this.gestureData.wristRotation = angle; } // Process pinch gesture (delay
+control) if (rightHand) { const thumb = rightHand[4]; const index =
+rightHand[8]; const distance = Math.sqrt( Math.pow(thumb.x - index.x, 2) +
+Math.pow(thumb.y - index.y, 2) ); this.gestureData.pinchDistance =
+Math.min(distance * 10, 1); } // Process hand spread (atmosphere/reverb) if
+(leftHand) { const thumb = leftHand[4]; const pinky = leftHand[20]; const spread
+= Math.sqrt( Math.pow(thumb.x - pinky.x, 2) + Math.pow(thumb.y - pinky.y, 2) );
+this.gestureData.handSpread = Math.min(spread * 5, 1); } // Calculate palm
+proximity (bass intensity) if (leftHand && rightHand) { const leftPalm =
+leftHand[0]; const rightPalm = rightHand[0]; const proximity = Math.sqrt(
+Math.pow(leftPalm.x - rightPalm.x, 2) + Math.pow(leftPalm.y - rightPalm.y, 2) );
+this.gestureData.palmProximity = Math.max(0, 1 - proximity * 2); } }
+updateVisualizationFromGestures() { if (!this.gestureData.handsDetected) return;
+// Map gestures to visual parameters this.visualParams.filterFreq =
+this.gestureData.leftHandY * this.sensitivity; this.visualParams.delayTime =
+this.gestureData.pinchDistance * this.sensitivity; this.visualParams.scale = 0.5
++ (this.gestureData.rightHandY * 2 * this.sensitivity);
+this.visualParams.rotation = this.gestureData.wristRotation;
+this.visualParams.brightness = this.gestureData.handSpread * this.sensitivity;
+this.visualParams.cameraAngle = this.gestureData.palmProximity * Math.PI * 2; //
+Update planet selection based on right hand Y if (this.exoplanets.length > 0) {
+const planetIndex = Math.floor(this.gestureData.rightHandY *
+this.exoplanets.length); this.currentPlanet = this.exoplanets[planetIndex];
+this.updatePlanetInfo(); } // Update display values
+document.getElementById('filterValue').textContent =
+(this.visualParams.filterFreq * 100).toFixed(0) + '%';
+document.getElementById('delayValue').textContent = (this.visualParams.delayTime
+* 100).toFixed(0) + '%'; document.getElementById('scaleValue').textContent =
+this.visualParams.scale.toFixed(2);
+document.getElementById('rotationValue').textContent =
+(this.visualParams.rotation * 180 / Math.PI).toFixed(0) + '°';
+this.applyGestureEffects(); } applyGestureEffects() { // Apply camera movement
+const radius = 50; this.camera.position.x =
+Math.cos(this.visualParams.cameraAngle) * radius; this.camera.position.z =
+Math.sin(this.visualParams.cameraAngle) * radius; this.camera.lookAt(0, 0, 0);
+// Apply scale and rotation to visual objects this.visualObjects.forEach(obj =>
+{ obj.scale.setScalar(this.visualParams.scale); obj.rotation.y =
+this.visualParams.rotation; // Update material properties for dub aesthetic if
+(obj.material) { if (obj.material.emissiveIntensity !== undefined) {
+obj.material.emissiveIntensity = this.visualParams.brightness; } if
+(obj.material.opacity !== undefined) { obj.material.opacity = 0.3 +
+this.visualParams.filterFreq * 0.7; } } }); // Update lighting based on gestures
+this.scene.children.forEach(child => { if (child.type === 'PointLight') {
+child.intensity = 0.5 + this.visualParams.brightness; } }); } toggleVideo() {
+const videoContainer = document.getElementById('videoContainer'); const button =
+document.getElementById('toggleVideo'); if (videoContainer.style.display ===
+'none') { videoContainer.style.display = 'block'; button.textContent = 'Hide
+Video'; button.classList.remove('active'); } else { videoContainer.style.display
+= 'none'; button.textContent = 'Show Video'; button.classList.add('active'); } }
+async fetchKeplerData() { const status = document.getElementById('status');
+status.textContent = 'Fetching Kepler exoplanet data...'; try { const response =
+await fetch( 'https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=' +
+'SELECT+pl_name,pl_orbper,pl_rade,st_dist,pl_eqt+FROM+ps+WHERE+default_flag=1+AND+pl_orbper+IS+NOT+NULL+AND+pl_rade+IS+NOT+NULL+LIMIT+100&format=json'
+); if (!response.ok) { throw new Error('Failed to fetch data'); } const data =
+await response.json(); this.exoplanets = data.filter(planet => planet.pl_orbper
+&& planet.pl_rade && planet.pl_orbper > 0 && planet.pl_rade > 0 );
+status.textContent = `Loaded ${this.exoplanets.length} exoplanets - Ready for
+gestures!`; status.className = 'active'; if (this.exoplanets.length > 0) {
+this.currentPlanet = this.exoplanets[0]; this.updatePlanetInfo();
+this.createInitialVisualization(); } } catch (error) { status.textContent =
+`Error: ${error.message}`; console.error('Failed to fetch Kepler data:', error);
+this.generateMockData(); status.textContent = 'Using mock exoplanet data - Ready
+for gestures!'; } } generateMockData() { this.exoplanets = []; const planetNames
+= ['Kepler-442b', 'Kepler-438b', 'Kepler-452b', 'Kepler-186f', 'Kepler-62e'];
+for (let i = 0; i < 50; i++) { this.exoplanets.push({ pl_name: planetNames[i %
+planetNames.length] || `Dub-Planet-${i}`, pl_orbper: Math.random() * 500 + 10,
+pl_rade: Math.random() * 10 + 0.5, st_dist: Math.random() * 1000 + 10, pl_eqt:
+Math.random() * 2000 + 200 }); } this.currentPlanet = this.exoplanets[0];
+this.updatePlanetInfo(); this.createInitialVisualization(); }
+createInitialVisualization() { this.clearScene(); const mode =
+document.getElementById('visualMode').value; switch (mode) { case 'orbital':
+this.createOrbitalSystem(); break; case 'network': this.createNetworkMap();
+break; case 'particles': this.createParticleField(); break; case 'dub_space':
+this.createDubSpace(); break; } } createDubSpace() { // Create a dub techno
+inspired space visualization // Central bass sphere const bassGeometry = new
+THREE.SphereGeometry(3, 32, 32); const bassMaterial = new
+THREE.MeshPhongMaterial({ color: 0x001133, emissive: 0x002244,
+emissiveIntensity: 0.5, transparent: true, opacity: 0.8 }); const bassSphere =
+new THREE.Mesh(bassGeometry, bassMaterial); this.scene.add(bassSphere);
+this.visualObjects.push(bassSphere); // Delay echo rings for (let i = 1; i <= 5;
+i++) { const ringGeometry = new THREE.TorusGeometry(8 + i * 3, 0.2, 8, 100);
+const ringMaterial = new THREE.MeshPhongMaterial({ color: new
+THREE.Color().setHSL(0.15, 0.7, 0.3), transparent: true, opacity: 0.3 / i });
+const ring = new THREE.Mesh(ringGeometry, ringMaterial); ring.rotation.x =
+Math.PI / 2; ring.userData = { delayRing: true, level: i };
+this.scene.add(ring); this.visualObjects.push(ring); } // Exoplanet data as
+floating orbs this.exoplanets.slice(0, 15).forEach((planet, index) => { const
+radius = Math.log(planet.pl_rade) * 0.3 + 0.2; const orbGeometry = new
+THREE.SphereGeometry(radius, 12, 12); const hue = (planet.pl_orbper / 500) % 1;
+const orbMaterial = new THREE.MeshPhongMaterial({ color: new
+THREE.Color().setHSL(hue, 0.8, 0.5), transparent: true, opacity: 0.7 }); const
+orb = new THREE.Mesh(orbGeometry, orbMaterial); const angle = (index / 15) *
+Math.PI * 2; const distance = 15 + Math.random() * 10; orb.position.set(
+Math.cos(angle) * distance, (Math.random() - 0.5) * 10, Math.sin(angle) *
+distance ); orb.userData = { planet: planet, floatOffset: Math.random() *
+Math.PI * 2 }; this.scene.add(orb); this.visualObjects.push(orb); }); }
+createOrbitalSystem() { // Enhanced orbital system with dub aesthetic const
+starGeometry = new THREE.SphereGeometry(2.5, 32, 32); const starMaterial = new
+THREE.MeshPhongMaterial({ color: 0x00ffaa, emissive: 0x004422,
+emissiveIntensity: 0.6 }); const star = new THREE.Mesh(starGeometry,
+starMaterial); this.scene.add(star); this.visualObjects.push(star);
+this.exoplanets.slice(0, 8).forEach((planet, index) => { const radius =
+Math.log(planet.pl_rade) * 0.4 + 0.3; const orbitRadius =
+Math.log(planet.pl_orbper) * 2.5 + 6; const planetGeometry = new
+THREE.SphereGeometry(radius, 16, 16); const hue = (index / 8) * 0.8; const
+planetMaterial = new THREE.MeshPhongMaterial({ color: new
+THREE.Color().setHSL(hue, 0.7, 0.6), transparent: true, opacity: 0.8 }); const
+planetMesh = new THREE.Mesh(planetGeometry, planetMaterial); planetMesh.userData
+= { planet: planet, orbitRadius: orbitRadius, orbitSpeed: 0.5 /
+Math.sqrt(planet.pl_orbper), angle: (index / 8) * Math.PI * 2 };
+this.scene.add(planetMesh); this.visualObjects.push(planetMesh); }); }
+createNetworkMap() { this.exoplanets.slice(0, 20).forEach((planet, index) => {
+const nodeGeometry = new THREE.SphereGeometry(planet.pl_rade * 0.15, 8, 8);
