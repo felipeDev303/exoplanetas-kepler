@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kepler Exoplanet</title>
+  <link rel="stylesheet" href="/styles/ui.css">
   </head>
   <body>
     <main
@@ -25,6 +26,66 @@
       </p>
     </main>
 
+    <section
+      style="
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 999;
+        background: #001100;
+        border: 1px solid #0f0;
+        padding: 12px;
+        border-radius: 6px;
+      "
+    >
+        <div class="exo-row">
+          <input id="exoSearch" class="exo-input" placeholder="buscar por nombre..." />
+          <button id="btnSearch" class="exo-btn">Buscar</button>
+        </div>
+        <div class="exo-row">
+          <button id="btnTop10" class="exo-btn">Top 10 por radio</button>
+          <button id="btnStats" class="exo-btn">Resumen</button>
+        </div>
+        <pre id="exoOutput" class="exo-output">Cargando datos...</pre>
+      </section>
+    </section>
+
     <script type="module" src="/scripts/processPlanets.js"></script>
+
+    <script>
+      // UI bindings - llaman a EXO_UTILS (expuesto por processPlanets.js)
+      const out = document.getElementById("exoOutput");
+      function show(o) {
+        out.textContent =
+          typeof o === "string" ? o : JSON.stringify(o, null, 2);
+      }
+
+      document.getElementById("btnSearch").addEventListener("click", () => {
+        const q = document.getElementById("exoSearch").value.trim();
+        if (!q) return show("Introduce un término de búsqueda");
+        const res = window.EXO_UTILS?.searchByName(q) ?? [];
+        show(res.slice(0, 50));
+      });
+
+      document.getElementById("btnTop10").addEventListener("click", () => {
+        const res = window.EXO_UTILS?.topNByRadius(10) ?? [];
+        show(res);
+      });
+
+      document.getElementById("btnStats").addEventListener("click", () => {
+        const res = window.EXO_UTILS?.statsSummary() ?? {};
+        show(res);
+      });
+
+      // Actualizar el panel cuando los datos estén listos
+      const checkLoaded = setInterval(() => {
+        if (window.EXO_PLANETS) {
+          show(
+            `${window.EXO_PLANETS.length} planetas cargados. Usa los botones para consultas.`
+          );
+          clearInterval(checkLoaded);
+        }
+      }, 200);
+    </script>
   </body>
 </html>

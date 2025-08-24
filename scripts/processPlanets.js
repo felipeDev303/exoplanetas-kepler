@@ -36,3 +36,139 @@ async function loadAndProcess() {
 
 // Ejecutar al cargar
 loadAndProcess();
+
+// =========================
+// Utilidades de consulta
+// =========================
+
+function _ensureLoaded() {
+  if (!window.EXO_PLANETS) {
+    console.warn(
+      "EXO_PLANETS no está cargado todavía. Ejecuta loadAndProcess() o recarga la página."
+    );
+    return false;
+  }
+  return true;
+}
+
+function searchByName(term) {
+  if (!_ensureLoaded()) return [];
+  const q = String(term).toLowerCase();
+  return window.EXO_PLANETS.filter(
+    (p) => p.name && p.name.toLowerCase().includes(q)
+  );
+}
+
+function filterByRadiusRange(min = 0, max = Infinity) {
+  if (!_ensureLoaded()) return [];
+  return window.EXO_PLANETS.filter((p) => p.radius >= min && p.radius <= max);
+}
+
+function topNByRadius(n = 10) {
+  if (!_ensureLoaded()) return [];
+  return [...window.EXO_PLANETS]
+    .sort((a, b) => b.radius - a.radius)
+    .slice(0, n);
+}
+
+function findClosestRadius(value) {
+  if (!_ensureLoaded()) return null;
+  let closest = null;
+  let bestDiff = Infinity;
+  for (const p of window.EXO_PLANETS) {
+    const d = Math.abs(p.radius - value);
+    if (d < bestDiff) {
+      bestDiff = d;
+      closest = p;
+    }
+  }
+  return closest;
+}
+
+function groupByPeriodRange(ranges = [10, 50, 200, 1000]) {
+  // ranges: array de límites superiores (ascendente). Devuelve buckets: 0-10,10-50,...,1000+
+  if (!_ensureLoaded()) return {};
+  const sorted = [...ranges].sort((a, b) => a - b);
+  const buckets = {};
+  const names = [];
+  let prev = 0;
+  for (const r of sorted) {
+    const key = `${prev}-${r}`;
+    buckets[key] = [];
+    names.push(key);
+    prev = r;
+  }
+  buckets[`${prev}+`] = [];
+
+  for (const p of window.EXO_PLANETS) {
+    const per = Number(p.period);
+    if (!Number.isFinite(per)) {
+      buckets.unknown = buckets.unknown || [];
+      buckets.unknown.push(p);
+      continue;
+    }
+    let placed = false;
+    prev = 0;
+    for (const r of sorted) {
+      if (per >= prev && per <= r) {
+        buckets[`${prev}-${r}`].push(p);
+        placed = true;
+        break;
+      }
+      prev = r;
+    }
+    if (!placed) buckets[`${sorted[sorted.length - 1]}+`].push(p);
+  }
+
+  return buckets;
+}
+
+function statsSummary() {
+  if (!_ensureLoaded()) return {};
+  const n = window.EXO_PLANETS.length;
+  const radii = window.EXO_PLANETS.map((p) => p.radius).filter(Number.isFinite);
+  const periods = window.EXO_PLANETS.map((p) => p.period).filter(
+    Number.isFinite
+  );
+  const sum = (arr) => arr.reduce((s, x) => s + x, 0);
+  const avg = (arr) => (arr.length ? sum(arr) / arr.length : 0);
+  return {
+    count: n,
+    radius: {
+      min: Math.min(...radii),
+      max: Math.max(...radii),
+      avg: avg(radii),
+    },
+    period: {
+      min: Math.min(...periods),
+      max: Math.max(...periods),
+      avg: avg(periods),
+    },
+  };
+}
+
+function sampleUsage() {
+  console.log("EXO_UTILS.sampleUsage() — ejemplos rápidos:");
+  console.log('Buscar por nombre: EXO_UTILS.searchByName("kepler-")');
+  console.log("Top 10 por radio: EXO_UTILS.topNByRadius(10)");
+  console.log(
+    "Filtrar radio entre 1 y 2 R⊕: EXO_UTILS.filterByRadiusRange(1,2)"
+  );
+  console.log(
+    "Agrupar por rango de periodo: EXO_UTILS.groupByPeriodRange([10,50,200])"
+  );
+  console.log("Resumen: EXO_UTILS.statsSummary()");
+}
+
+// Exponer utilidades globalmente
+window.EXO_UTILS = {
+  searchByName,
+  filterByRadiusRange,
+  topNByRadius,
+  findClosestRadius,
+  groupByPeriodRange,
+  statsSummary,
+  sampleUsage,
+};
+
+// Nota: ejecutar EXO_UTILS.sampleUsage() desde la consola para ver ejemplos.

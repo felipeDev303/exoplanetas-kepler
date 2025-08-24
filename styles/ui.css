@@ -1,0 +1,51 @@
+.exo-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 999;
+  background: #001100;
+  border: 1px solid #0f0;
+  padding: 12px;
+  border-radius: 6px;
+  max-width: 420px;
+}
+
+.exo-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+#exoSearch.exo-input {
+  padding: 6px;
+  background: #000;
+  color: #0f0;
+  border: 1px solid #0f0;
+  border-radius: 4px;
+  width: 200px;
+}
+
+.exo-btn {
+  padding: 6px;
+  border: 1px solid #0f0;
+  background: #000;
+  color: #0f0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.exo-btn:hover {
+  background: rgba(15, 255, 0, 0.08);
+}
+
+.exo-output {
+  max-width: 420px;
+  max-height: 260px;
+  overflow: auto;
+  color: #0f0;
+  background: #001100;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #033;
+  white-space: pre-wrap;
+}
