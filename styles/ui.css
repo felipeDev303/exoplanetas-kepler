@@ -49,3 +49,10 @@
   border: 1px solid #033;
   white-space: pre-wrap;
 }
+
+.exo-main {
+  font-family: monospace;
+  padding: 20px;
+  background-color: #000;
+  color: #0f0;
+}

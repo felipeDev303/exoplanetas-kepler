@@ -4,17 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kepler Exoplanet</title>
-  <link rel="stylesheet" href="/styles/ui.css">
+    <link rel="stylesheet" href="/styles/ui.css" />
   </head>
   <body>
-    <main
-      style="
-        font-family: monospace;
-        padding: 20px;
-        background-color: #000;
-        color: #0f0;
-      "
-    >
+    <main class="exo-main">
       <h1>Kepler Exoplanet — Data processor</h1>
       <p>
         Abre la consola del navegador (F12) para ver la tabla de planetas
@@ -26,28 +19,21 @@
       </p>
     </main>
 
-    <section
-      style="
-        position: fixed;
-        right: 20px;
-        bottom: 20px;
-        z-index: 999;
-        background: #001100;
-        border: 1px solid #0f0;
-        padding: 12px;
-        border-radius: 6px;
-      "
-    >
-        <div class="exo-row">
-          <input id="exoSearch" class="exo-input" placeholder="buscar por nombre..." />
-          <button id="btnSearch" class="exo-btn">Buscar</button>
-        </div>
-        <div class="exo-row">
-          <button id="btnTop10" class="exo-btn">Top 10 por radio</button>
-          <button id="btnStats" class="exo-btn">Resumen</button>
-        </div>
-        <pre id="exoOutput" class="exo-output">Cargando datos...</pre>
-      </section>
+    <section class="exo-panel">
+      <div class="exo-row">
+        <input
+          id="exoSearch"
+          class="exo-input"
+          placeholder="buscar por nombre..."
+        />
+        <button id="btnSearch" class="exo-btn">Buscar</button>
+      </div>
+      <div class="exo-row">
+        <button id="btnTop10" class="exo-btn">Top 10 por radio</button>
+        <button id="btnStats" class="exo-btn">Resumen</button>
+        <button id="btnVisualize" class="exo-btn">Visualizar 3D</button>
+      </div>
+      <pre id="exoOutput" class="exo-output">Cargando datos...</pre>
     </section>
 
     <script type="module" src="/scripts/processPlanets.js"></script>
@@ -86,6 +72,33 @@
           clearInterval(checkLoaded);
         }
       }, 200);
+
+      // Visualizador 3D: carga dinámica del módulo y fallback
+      document
+        .getElementById("btnVisualize")
+        .addEventListener("click", async () => {
+          // Asegurar datos
+          if (!window.EXO_PLANETS || !window.EXO_PLANETS.length) {
+            const ok = confirm(
+              "No hay datos cargados. ¿Generar datos de ejemplo?"
+            );
+            if (!ok) return;
+            // crear datos de ejemplo simples
+            window.EXO_PLANETS = Array.from({ length: 8 }).map((_, i) => ({
+              name: `Mock ${i + 1}`,
+              radius: Math.round((Math.random() * 10 + 0.5) * 10) / 10,
+              period: Math.round((Math.random() * 300 + 10) * 10) / 10,
+            }));
+          }
+
+          try {
+            const m = await import("/scripts/visualizeThree.js");
+            m.visualize();
+          } catch (err) {
+            console.error("Error cargando el visualizador:", err);
+            alert("No se pudo cargar el visualizador. Revisa la consola.");
+          }
+        });
     </script>
   </body>
 </html>
