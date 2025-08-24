@@ -2,8 +2,6 @@
 
 ## Source
 
-URL=https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative
-
 ## Instructivo: Visualización de Exoplanetas con la API de la NASA y ThreeJS
 
 Este instructivo te guiará a través del proceso de crear una visualización interactiva en 3D de exoplanetas, utilizando datos reales de la NASA y la librería ThreeJS de JavaScript. El objetivo es conectar disciplinas como la astronomía, la informática y las matemáticas para comprender mejor nuestro lugar en el universo.
