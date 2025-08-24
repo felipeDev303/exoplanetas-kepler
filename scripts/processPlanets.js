@@ -8,7 +8,25 @@ async function loadAndProcess() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const planets = await res.json();
 
-    const cleaned = planets
+    // Helper: determinar si un registro raw indica que está "confirmado"
+    function isConfirmed(obj) {
+      if (!obj || typeof obj !== "object") return false;
+      for (const k of Object.keys(obj)) {
+        if (/disposition|status|flag/i.test(k)) {
+          const v = obj[k];
+          if (v == null) continue;
+          const s = String(v).toLowerCase();
+          if (s.includes("confir")) return true; // 'confirmed', 'CONFIRMED', etc.
+        }
+      }
+      return false;
+    }
+
+    // Filtrar registros raw para quedarnos con los marcados como confirmados
+    const confirmedRaw = planets.filter(isConfirmed);
+
+    // Normalizar sólo los registros confirmados
+    const cleaned = confirmedRaw
       .map((planet) => ({
         name:
           planet.kepler_name ??
@@ -23,7 +41,12 @@ async function loadAndProcess() {
       }))
       .filter((p) => !Number.isNaN(p.radius));
 
-    console.log("Planetas procesados:", cleaned.length);
+    console.log("Planetas totales en el JSON:", planets.length);
+    console.log(
+      "Registros marcados como confirmados (raw):",
+      confirmedRaw.length
+    );
+    console.log("Planetas procesados y confirmados:", cleaned.length);
     console.table(cleaned.slice(0, 20));
     // Exponer para uso interactivo desde consola / otros scripts
     window.EXO_PLANETS = cleaned;
