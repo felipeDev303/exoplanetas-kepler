@@ -50,6 +50,11 @@ async function loadAndProcess() {
     console.table(cleaned.slice(0, 20));
     // Exponer para uso interactivo desde consola / otros scripts
     window.EXO_PLANETS = cleaned;
+    if (window.EXO_PLANETS && window.EXO_PLANETS.length) {
+      import("/scripts/visualizeThree.js")
+        .then((m) => m.visualize())
+        .catch((err) => console.warn("No se pudo iniciar visualizador:", err));
+    }
     return cleaned;
   } catch (err) {
     console.error("Error cargando /data/exoplanets.json:", err);
