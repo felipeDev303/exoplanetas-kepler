@@ -25,8 +25,13 @@
           id="exoSearch"
           class="exo-input"
           placeholder="buscar por nombre..."
+          list="exoSuggestions"
         />
+        <datalist id="exoSuggestions"></datalist>
         <button id="btnSearch" class="exo-btn">Buscar</button>
+        <button id="btnVisualizeSelected" class="exo-btn">
+          Visualizar seleccionado
+        </button>
       </div>
       <div class="exo-row">
         <button id="btnTop10" class="exo-btn">Top 10 por radio</button>
@@ -34,6 +39,11 @@
         <button id="btnVisualize" class="exo-btn">Visualizar 3D</button>
       </div>
       <pre id="exoOutput" class="exo-output">Cargando datos...</pre>
+      <div class="exo-row" style="margin-top:1em">
+        <label for="orbitSpeed">Velocidad órbita:</label>
+        <input type="range" id="orbitSpeed" min="0.1" max="3" step="0.01" value="1" style="width:120px;">
+        <span id="orbitSpeedVal">1.00x</span>
+      </div>
     </section>
 
     <script type="module" src="/scripts/processPlanets.js"></script>
@@ -63,12 +73,17 @@
         show(res);
       });
 
-      // Actualizar el panel cuando los datos estén listos
+      // Actualizar el panel cuando los datos estén listos y poblar autocompletado
       const checkLoaded = setInterval(() => {
         if (window.EXO_PLANETS) {
           show(
             `${window.EXO_PLANETS.length} planetas cargados. Usa los botones para consultas.`
           );
+          // Autocompletado de nombres
+          const datalist = document.getElementById("exoSuggestions");
+          datalist.innerHTML = window.EXO_PLANETS.map(
+            (p) => `<option value="${p.name}">`
+          ).join("");
           clearInterval(checkLoaded);
         }
       }, 200);
@@ -83,14 +98,12 @@
               "No hay datos cargados. ¿Generar datos de ejemplo?"
             );
             if (!ok) return;
-            // crear datos de ejemplo simples
             window.EXO_PLANETS = Array.from({ length: 8 }).map((_, i) => ({
               name: `Mock ${i + 1}`,
               radius: Math.round((Math.random() * 10 + 0.5) * 10) / 10,
               period: Math.round((Math.random() * 300 + 10) * 10) / 10,
             }));
           }
-
           try {
             const m = await import("/scripts/visualizeThree.js");
             m.visualize();
@@ -99,6 +112,32 @@
             alert("No se pudo cargar el visualizador. Revisa la consola.");
           }
         });
+
+      // Visualizar solo planetas seleccionados por búsqueda
+      document.getElementById("orbitSpeed").addEventListener("input", e => {
+        document.getElementById("orbitSpeedVal").textContent = parseFloat(e.target.value).toFixed(2) + 'x';
+      });
+
+      document.getElementById("btnVisualizeSelected").addEventListener("click", async () => {
+        const q = document.getElementById("exoSearch").value.trim().toLowerCase();
+        if (!q) return show("Introduce un término de búsqueda para visualizar");
+        const all = window.EXO_PLANETS || [];
+        // Buscar coincidencia exacta primero
+        let planets = all.filter(p => p.name && p.name.toLowerCase() === q);
+        if (!planets.length) {
+          // Si no hay coincidencia exacta, buscar parciales
+          planets = all.filter(p => p.name && p.name.toLowerCase().includes(q));
+        }
+        if (!planets.length) return show("No se encontraron planetas con ese nombre");
+        const orbitSpeed = parseFloat(document.getElementById("orbitSpeed").value) || 1;
+        try {
+          const m = await import("/scripts/visualizeThree.js");
+          m.visualize("threeContainer", planets, orbitSpeed);
+        } catch (err) {
+          console.error("Error cargando el visualizador:", err);
+          alert("No se pudo cargar el visualizador. Revisa la consola.");
+        }
+      });
     </script>
   </body>
 </html>

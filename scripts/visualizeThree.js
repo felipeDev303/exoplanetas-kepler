@@ -2,15 +2,29 @@
 // Visualizador Three.js mínimo que usa window.EXO_PLANETS
 
 // Usar builds ESM desde CDN para que funcione directo en el navegador sin bundler
-import * as THREE from "https://unpkg.com/three@0.152.2/build/three.module.js";
-import { OrbitControls } from "https://unpkg.com/three@0.152.2/examples/jsm/controls/OrbitControls.js";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-export function visualize(containerId = "threeContainer") {
-  const planets = window.EXO_PLANETS || [];
+/**
+ * Visualiza planetas en Three.js
+ * @param {string} containerId - id del contenedor (opcional)
+ * @param {Array} planetsArg - array de planetas a mostrar (opcional, por defecto window.EXO_PLANETS)
+ * @param {number} orbitSpeed - multiplicador de velocidad orbital (opcional, por defecto 1)
+ */
+export function visualize(containerId = "threeContainer", planetsArg, orbitSpeed = 1) {
+  const planets = Array.isArray(planetsArg)
+    ? planetsArg
+    : window.EXO_PLANETS || [];
   if (!planets.length) {
-    alert("No hay datos cargados en window.EXO_PLANETS");
+    alert(
+      "No hay datos cargados en window.EXO_PLANETS ni se pasó un array de planetas"
+    );
     return null;
   }
+  orbitSpeed = typeof orbitSpeed === 'number' && isFinite(orbitSpeed) ? orbitSpeed : 1;
+  // Limpiar visualización anterior si existe
+  let old = document.getElementById(containerId);
+  if (old) old.remove();
 
   // Crear contenedor
   let container = document.getElementById(containerId);
@@ -109,7 +123,7 @@ export function visualize(containerId = "threeContainer") {
   function animate() {
     const dt = clock.getDelta();
     objects.forEach((o) => {
-      const speed = 1 / (o.period / 100); // inverso del periodo
+      const speed = (1 / (o.period / 100)) * orbitSpeed; // inverso del periodo * multiplicador
       o.angle += dt * speed;
       o.mesh.position.x = Math.cos(o.angle) * o.orbitRadius;
       o.mesh.position.z = Math.sin(o.angle) * o.orbitRadius;

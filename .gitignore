@@ -1,0 +1,28 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# VSCode
+.vscode/
+
+# Datos generados y temporales
+/data/exoplanetsFiltered.json
+/data/exoplanetsThree.json
+/data/*.bak
+
+# Salidas temporales y scripts
+*.tmp
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Entornos virtuales
+.venv/
+venv/
+
+# Otros
+.env
