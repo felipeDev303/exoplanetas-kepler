@@ -1,3 +1,114 @@
+/**
+ * Visualiza un solo planeta en el centro, girando sobre su eje Y, con textura opcional.
+ * @param {object} planet - Objeto planeta {name, radius, period}
+ * @param {string} textureUrl - Ruta relativa a la textura (por ejemplo, '/public/planeta1.jpg')
+ * @param {string} containerId - id del contenedor (opcional)
+ */
+export function visualizeSinglePlanet(
+  planet,
+  textureUrl,
+  containerId = "threeContainer"
+) {
+  if (!planet || typeof planet !== "object") {
+    alert("Debes pasar un objeto planeta válido");
+    return;
+  }
+  // Limpiar visualización anterior si existe
+  let old = document.getElementById(containerId);
+  if (old) old.remove();
+
+  let container = document.getElementById(containerId);
+  if (!container) {
+    container = document.createElement("div");
+    container.id = containerId;
+    container.style.position = "fixed";
+    container.style.left = "0";
+    container.style.top = "0";
+    container.style.width = "100vw";
+    container.style.height = "100vh";
+    container.style.zIndex = 998;
+    document.body.appendChild(container);
+  }
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  );
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  container.appendChild(renderer.domElement);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  camera.position.set(0, 0, 10);
+  controls.update();
+
+  // luz
+  const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+  scene.add(ambient);
+  const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+  dir.position.set(10, 10, 10);
+  scene.add(dir);
+
+  // Crear planeta
+  const s = Math.max(0.5, Math.min(planet.radius || 1, 10)) * 0.5; // escala visual
+  const geo = new THREE.SphereGeometry(s, 48, 48);
+  let mat;
+  if (textureUrl) {
+    const texLoader = new THREE.TextureLoader();
+    mat = new THREE.MeshStandardMaterial({
+      map: texLoader.load(textureUrl),
+      roughness: 0.5,
+      metalness: 0.1,
+    });
+  } else {
+    mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5),
+      roughness: 0.5,
+      metalness: 0.1,
+    });
+  }
+  const mesh = new THREE.Mesh(geo, mat);
+  scene.add(mesh);
+
+  // Fondo estrellado simple
+  const starsGeo = new THREE.BufferGeometry();
+  const starCount = 1000;
+  const starPositions = new Float32Array(starCount * 3);
+  for (let i = 0; i < starCount; i++) {
+    starPositions[i * 3] = (Math.random() - 0.5) * 1000;
+    starPositions[i * 3 + 1] = (Math.random() - 0.5) * 1000;
+    starPositions[i * 3 + 2] = (Math.random() - 0.5) * 1000;
+  }
+  starsGeo.setAttribute(
+    "position",
+    new THREE.BufferAttribute(starPositions, 3)
+  );
+  const starsMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.5 });
+  const starField = new THREE.Points(starsGeo, starsMat);
+  scene.add(starField);
+
+  // Animación: solo rotación sobre eje Y
+  const clock = new THREE.Clock();
+  function animate() {
+    const dt = clock.getDelta();
+    mesh.rotation.y += 0.7 * dt;
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  return { scene, camera, renderer, mesh };
+}
 // scripts/visualizeThree.js
 // Visualizador Three.js mínimo que usa window.EXO_PLANETS
 
@@ -11,7 +122,11 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
  * @param {Array} planetsArg - array de planetas a mostrar (opcional, por defecto window.EXO_PLANETS)
  * @param {number} orbitSpeed - multiplicador de velocidad orbital (opcional, por defecto 1)
  */
-export function visualize(containerId = "threeContainer", planetsArg, orbitSpeed = 1) {
+export function visualize(
+  containerId = "threeContainer",
+  planetsArg,
+  orbitSpeed = 1
+) {
   const planets = Array.isArray(planetsArg)
     ? planetsArg
     : window.EXO_PLANETS || [];
@@ -21,7 +136,8 @@ export function visualize(containerId = "threeContainer", planetsArg, orbitSpeed
     );
     return null;
   }
-  orbitSpeed = typeof orbitSpeed === 'number' && isFinite(orbitSpeed) ? orbitSpeed : 1;
+  orbitSpeed =
+    typeof orbitSpeed === "number" && isFinite(orbitSpeed) ? orbitSpeed : 1;
   // Limpiar visualización anterior si existe
   let old = document.getElementById(containerId);
   if (old) old.remove();
@@ -83,7 +199,7 @@ export function visualize(containerId = "threeContainer", planetsArg, orbitSpeed
   planets.forEach((p, i) => {
     const s = scale(p.radius || 1);
     const geo = new THREE.SphereGeometry(s, 24, 24);
-    const mat = new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshBasicMaterial({
       color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5),
     });
     const mesh = new THREE.Mesh(geo, mat);

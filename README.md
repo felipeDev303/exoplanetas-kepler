@@ -66,10 +66,10 @@ python -m http.server 8000
 **Con Node:**
 
 ```bash
-npx http-server . -p 8000
+npx vite
 ```
 
-Abre en tu navegador: [http://localhost:8000](http://localhost:8000)
+Abre en tu navegador: [http://localhost:5173](http://localhost:5173)
 
 ### 5. Visualizar los exoplanetas
 
