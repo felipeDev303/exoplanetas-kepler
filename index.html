@@ -70,15 +70,23 @@
 
     <script type="module" src="/scripts/processPlanets.js"></script>
     <script>
-        // Vista planeta único con textura
-        document.getElementById("btnSinglePlanet").addEventListener("click", async () => {
-          const q = document.getElementById("exoSearch").value.trim().toLowerCase();
-          if (!q) return show("Introduce un término de búsqueda para visualizar");
+      // Vista planeta único con textura
+      document
+        .getElementById("btnSinglePlanet")
+        .addEventListener("click", async () => {
+          const q = document
+            .getElementById("exoSearch")
+            .value.trim()
+            .toLowerCase();
+          if (!q)
+            return show("Introduce un término de búsqueda para visualizar");
           const all = window.EXO_PLANETS || [];
-          let planet = all.find(p => p.name && p.name.toLowerCase() === q);
+          let planet = all.find((p) => p.name && p.name.toLowerCase() === q);
           if (!planet) {
             // Si no hay coincidencia exacta, buscar parcial
-            planet = all.find(p => p.name && p.name.toLowerCase().includes(q));
+            planet = all.find(
+              (p) => p.name && p.name.toLowerCase().includes(q)
+            );
           }
           if (!planet) return show("No se encontró el planeta");
 
@@ -98,108 +106,109 @@
             alert("No se pudo cargar el visualizador. Revisa la consola.");
           }
         });
+    </script>
 
-      <script>
-        // UI bindings - llaman a EXO_UTILS (expuesto por processPlanets.js)
-        const out = document.getElementById("exoOutput");
-        function show(o) {
-          out.textContent =
-            typeof o === "string" ? o : JSON.stringify(o, null, 2);
+    <script>
+      // UI bindings - llaman a EXO_UTILS (expuesto por processPlanets.js)
+      const out = document.getElementById("exoOutput");
+      function show(o) {
+        out.textContent =
+          typeof o === "string" ? o : JSON.stringify(o, null, 2);
+      }
+
+      document.getElementById("btnSearch").addEventListener("click", () => {
+        const q = document.getElementById("exoSearch").value.trim();
+        if (!q) return show("Introduce un término de búsqueda");
+        const res = window.EXO_UTILS?.searchByName(q) ?? [];
+        show(res.slice(0, 50));
+      });
+
+      document.getElementById("btnTop10").addEventListener("click", () => {
+        const res = window.EXO_UTILS?.topNByRadius(10) ?? [];
+        show(res);
+      });
+
+      document.getElementById("btnStats").addEventListener("click", () => {
+        const res = window.EXO_UTILS?.statsSummary() ?? {};
+        show(res);
+      });
+
+      // Actualizar el panel cuando los datos estén listos y poblar autocompletado
+      const checkLoaded = setInterval(() => {
+        if (window.EXO_PLANETS) {
+          show(
+            `${window.EXO_PLANETS.length} planetas cargados. Usa los botones para consultas.`
+          );
+          // Autocompletado de nombres
+          const datalist = document.getElementById("exoSuggestions");
+          datalist.innerHTML = window.EXO_PLANETS.map(
+            (p) => `<option value="${p.name}">`
+          ).join("");
+          clearInterval(checkLoaded);
         }
+      }, 200);
 
-        document.getElementById("btnSearch").addEventListener("click", () => {
-          const q = document.getElementById("exoSearch").value.trim();
-          if (!q) return show("Introduce un término de búsqueda");
-          const res = window.EXO_UTILS?.searchByName(q) ?? [];
-          show(res.slice(0, 50));
-        });
-
-        document.getElementById("btnTop10").addEventListener("click", () => {
-          const res = window.EXO_UTILS?.topNByRadius(10) ?? [];
-          show(res);
-        });
-
-        document.getElementById("btnStats").addEventListener("click", () => {
-          const res = window.EXO_UTILS?.statsSummary() ?? {};
-          show(res);
-        });
-
-        // Actualizar el panel cuando los datos estén listos y poblar autocompletado
-        const checkLoaded = setInterval(() => {
-          if (window.EXO_PLANETS) {
-            show(
-              `${window.EXO_PLANETS.length} planetas cargados. Usa los botones para consultas.`
+      // Visualizador 3D: carga dinámica del módulo y fallback
+      document
+        .getElementById("btnVisualize")
+        .addEventListener("click", async () => {
+          // Asegurar datos
+          if (!window.EXO_PLANETS || !window.EXO_PLANETS.length) {
+            const ok = confirm(
+              "No hay datos cargados. ¿Generar datos de ejemplo?"
             );
-            // Autocompletado de nombres
-            const datalist = document.getElementById("exoSuggestions");
-            datalist.innerHTML = window.EXO_PLANETS.map(
-              (p) => `<option value="${p.name}">`
-            ).join("");
-            clearInterval(checkLoaded);
+            if (!ok) return;
+            window.EXO_PLANETS = Array.from({ length: 8 }).map((_, i) => ({
+              name: `Mock ${i + 1}`,
+              radius: Math.round((Math.random() * 10 + 0.5) * 10) / 10,
+              period: Math.round((Math.random() * 300 + 10) * 10) / 10,
+            }));
           }
-        }, 200);
-
-        // Visualizador 3D: carga dinámica del módulo y fallback
-        document
-          .getElementById("btnVisualize")
-          .addEventListener("click", async () => {
-            // Asegurar datos
-            if (!window.EXO_PLANETS || !window.EXO_PLANETS.length) {
-              const ok = confirm(
-                "No hay datos cargados. ¿Generar datos de ejemplo?"
-              );
-              if (!ok) return;
-              window.EXO_PLANETS = Array.from({ length: 8 }).map((_, i) => ({
-                name: `Mock ${i + 1}`,
-                radius: Math.round((Math.random() * 10 + 0.5) * 10) / 10,
-                period: Math.round((Math.random() * 300 + 10) * 10) / 10,
-              }));
-            }
-            try {
-              const m = await import("/scripts/visualizeThree.js");
-              m.visualize();
-            } catch (err) {
-              console.error("Error cargando el visualizador:", err);
-              alert("No se pudo cargar el visualizador. Revisa la consola.");
-            }
-          });
-
-        // Visualizar solo planetas seleccionados por búsqueda
-        document.getElementById("orbitSpeed").addEventListener("input", (e) => {
-          document.getElementById("orbitSpeedVal").textContent =
-            parseFloat(e.target.value).toFixed(2) + "x";
+          try {
+            const m = await import("/scripts/visualizeThree.js");
+            m.visualize();
+          } catch (err) {
+            console.error("Error cargando el visualizador:", err);
+            alert("No se pudo cargar el visualizador. Revisa la consola.");
+          }
         });
 
-        document
-          .getElementById("btnVisualizeSelected")
-          .addEventListener("click", async () => {
-            const q = document
-              .getElementById("exoSearch")
-              .value.trim()
-              .toLowerCase();
-            if (!q)
-              return show("Introduce un término de búsqueda para visualizar");
-            const all = window.EXO_PLANETS || [];
-            // Buscar coincidencia exacta primero
-            let planets = all.filter((p) => p.name && p.name.toLowerCase() === q);
-            if (!planets.length) {
-              // Si no hay coincidencia exacta, buscar parciales
-              planets = all.filter(
-                (p) => p.name && p.name.toLowerCase().includes(q)
-              );
-            }
-            if (!planets.length)
-              return show("No se encontraron planetas con ese nombre");
-            const orbitSpeed =
-              parseFloat(document.getElementById("orbitSpeed").value) || 1;
-            try {
-              const m = await import("/scripts/visualizeThree.js");
-              m.visualize("threeContainer", planets, orbitSpeed);
-            } catch (err) {
-              console.error("Error cargando el visualizador:", err);
-              alert("No se pudo cargar el visualizador. Revisa la consola.");
-            }
-          });
+      // Visualizar solo planetas seleccionados por búsqueda
+      document.getElementById("orbitSpeed").addEventListener("input", (e) => {
+        document.getElementById("orbitSpeedVal").textContent =
+          parseFloat(e.target.value).toFixed(2) + "x";
+      });
+
+      document
+        .getElementById("btnVisualizeSelected")
+        .addEventListener("click", async () => {
+          const q = document
+            .getElementById("exoSearch")
+            .value.trim()
+            .toLowerCase();
+          if (!q)
+            return show("Introduce un término de búsqueda para visualizar");
+          const all = window.EXO_PLANETS || [];
+          // Buscar coincidencia exacta primero
+          let planets = all.filter((p) => p.name && p.name.toLowerCase() === q);
+          if (!planets.length) {
+            // Si no hay coincidencia exacta, buscar parciales
+            planets = all.filter(
+              (p) => p.name && p.name.toLowerCase().includes(q)
+            );
+          }
+          if (!planets.length)
+            return show("No se encontraron planetas con ese nombre");
+          const orbitSpeed =
+            parseFloat(document.getElementById("orbitSpeed").value) || 1;
+          try {
+            const m = await import("/scripts/visualizeThree.js");
+            m.visualize("threeContainer", planets, orbitSpeed);
+          } catch (err) {
+            console.error("Error cargando el visualizador:", err);
+            alert("No se pudo cargar el visualizador. Revisa la consola.");
+          }
+        });
     </script>
   </body>
 </html>
