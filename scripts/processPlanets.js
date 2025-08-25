@@ -4,58 +4,24 @@
 
 async function loadAndProcess() {
   try {
-    const res = await fetch("/data/exoplanets.json");
+    const res = await fetch("/data/exoplanetsThree.json");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const planets = await res.json();
 
-    // Helper: determinar si un registro raw indica que está "confirmado"
-    function isConfirmed(obj) {
-      if (!obj || typeof obj !== "object") return false;
-      for (const k of Object.keys(obj)) {
-        if (/disposition|status|flag/i.test(k)) {
-          const v = obj[k];
-          if (v == null) continue;
-          const s = String(v).toLowerCase();
-          if (s.includes("confir")) return true; // 'confirmed', 'CONFIRMED', etc.
-        }
-      }
-      return false;
-    }
-
-    // Filtrar registros raw para quedarnos con los marcados como confirmados
-    const confirmedRaw = planets.filter(isConfirmed);
-
-    // Normalizar sólo los registros confirmados
-    const cleaned = confirmedRaw
-      .map((planet) => ({
-        name:
-          planet.kepler_name ??
-          planet.kep_name ??
-          planet.pl_name ??
-          planet.name ??
-          "unknown",
-        radius: Number(
-          planet.koi?.prad ?? planet.koi_prad ?? planet.pl_rade ?? NaN
-        ),
-        period: Number(planet.koi?.per ?? planet.pl_orbper ?? NaN),
-      }))
-      .filter((p) => !Number.isNaN(p.radius));
-
-    console.log("Planetas totales en el JSON:", planets.length);
+    if (!Array.isArray(planets))
+      throw new Error("El archivo exoplanetsThree.json no es un array");
     console.log(
-      "Registros marcados como confirmados (raw):",
-      confirmedRaw.length
+      "Planetas cargados desde exoplanetsThree.json:",
+      planets.length
     );
-    console.log("Planetas procesados y confirmados:", cleaned.length);
-    console.table(cleaned.slice(0, 20));
-    // Exponer para uso interactivo desde consola / otros scripts
-    window.EXO_PLANETS = cleaned;
+    console.table(planets.slice(0, 20));
+    window.EXO_PLANETS = planets;
     if (window.EXO_PLANETS && window.EXO_PLANETS.length) {
       import("/scripts/visualizeThree.js")
         .then((m) => m.visualize())
         .catch((err) => console.warn("No se pudo iniciar visualizador:", err));
     }
-    return cleaned;
+    return planets;
   } catch (err) {
     console.error("Error cargando /data/exoplanets.json:", err);
     return [];
